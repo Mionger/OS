@@ -1,3 +1,35 @@
+#ifndef OPEN_FILE_TABLE_H
+#define OPEN_FILE_TABLE_H
+
+#include "INode.h"
+#include "File.h"
+#include "FileSystem.h"
+
+class OpenFileTable
+{
+public:
+	/* 静态常属性 */
+	static const int NFILE	= 100;	/* 打开文件控制块File结构的数量 */
+
+	/* 方法 */
+public:
+	/* 构造函数 */
+	OpenFileTable();
+	/* 析构函数 */
+	~OpenFileTable();
+		
+	File* FAlloc();				/* 在系统打开文件表中分配一个空闲的File结构 */
+	void CloseF(File* pFile);	/* 对打开文件控制块File结构的引用计数f_count减1，
+								 * 若引用计数f_count为0，则释放File结构。
+								 */
+	/* 属性 */
+public:
+	File m_File[NFILE];			/* 系统打开文件表，为所有进程共享，进程打开文件描述符表
+								中包含指向打开文件表中对应File结构的指针。*/
+};
+
+#endif
+
 #ifndef INODE_TABLE_H
 #define INODE_TABLE_H
 

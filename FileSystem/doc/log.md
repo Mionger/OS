@@ -262,7 +262,7 @@ public:
 };
 ```
 
-### 2.9 BufferManager缓存块管理类
+### 2.8 BufferManager缓存块管理类
 
 ```c++
 class BufferManager
@@ -316,7 +316,52 @@ private:
 };
 ```
 
-### 2.8 File文件控制块类
+### 2.9 BlockDevice块设备类
+
+```c++
+class BlockDevice
+{
+private:
+    /* 方法 */
+public:
+    /* 构造函数 */
+    BlockDevice();
+    /* 析构函数 */
+    ~BlockDevice();
+
+    void write(char *buf, int buf_size, int offset);    /* 向块设备写入 */
+    void read(char *buf, int buf_size, int offset);     /* 从块设备读取 */
+};
+```
+
+### 2.10 DeviceManager设备管理类
+
+```c++
+class DeviceManager
+{
+	/* 静态常属性 */
+public:
+	static const int MAX_DEVICE_NUM = 10;	/* 系统允许最大块设备数量 */
+	static const int NODEV = -1;	/* NODEV设备号 */
+
+	static const short ROOTDEV = (0 << 8) | 0;	/* 磁盘的主、从设备号都为0 */
+
+public:
+	DeviceManager();
+	~DeviceManager();
+
+	/* 初始化块设备基类指针数组。相当于是对块设备开关表bdevsw的初始化。*/
+	void Initialize();
+
+	int GetNBlkDev();							/* 获取系统中实际块设备数量nblkdev */
+	BlockDevice& GetBlockDevice(short major);	/* 根据主设备号major获取相应块设备对象实例 */
+private:
+	int nblkdev;							/* 系统中块设备的数量 @line 4631 */
+	BlockDevice *bdevsw[MAX_DEVICE_NUM];	/* 指向块设备基类的指针数组，相当于Unix V6中块设备开关表 */
+};
+```
+
+### 2.11 File文件控制块类
 
 ```c++
 class File
