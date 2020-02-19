@@ -34,3 +34,87 @@ public:
 };
 
 #endif
+
+#ifndef MOUNT_H
+#define MOUNT_H
+
+#include "INode.h"
+
+/*
+ * 文件系统装配块(Mount)的定义。
+ * 装配块用于实现子文件系统与
+ * 根文件系统的连接。
+ */
+class Mount
+{
+	/* 方法 */
+public:
+	/* 构造函数 */
+	Mount();
+	/* 析构函数 */
+	~Mount();
+	
+	/* 属性 */
+public:
+	short 		m_dev;		/* 文件系统设备号 */
+	SuperBlock* m_spb;		/* 指向文件系统的Super Block对象在内存中的副本 */
+	Inode*		m_inodep;	/* 指向挂载子文件系统的内存INode */
+};
+
+#endif
+
+#ifndef FILE_SYSTEM_H
+#define FILE_SYSTEM_H
+
+#include "INode.h"
+#include "BufferManager.h"
+
+class FileSystem
+{
+public:
+	/* static consts */
+	static const int NMOUNT = 5;			/* 系统中用于挂载子文件系统的装配块数量 */
+
+	static const int SUPER_BLOCK_SECTOR_NUMBER = 200;	/* 定义SuperBlock位于磁盘上的扇区号，占据200，201两个扇区。 */
+
+	static const int ROOTINO = 0;			/* 文件系统根目录外存Inode编号 */
+
+	static const int INODE_NUMBER_PER_SECTOR = 8;		/* 外存INode对象长度为64字节，每个磁盘块可以存放512/64 = 8个外存Inode */
+	static const int INODE_ZONE_START_SECTOR = 202;		/* 外存Inode区位于磁盘上的起始扇区号 */
+	static const int INODE_ZONE_SIZE = 1024 - 202;		/* 磁盘上外存Inode区占据的扇区数 */
+
+	static const int DATA_ZONE_START_SECTOR = 1024;		/* 数据区的起始扇区号 */
+	static const int DATA_ZONE_END_SECTOR = 18000 - 1;	/* 数据区的结束扇区号 */
+	static const int DATA_ZONE_SIZE = 18000 - DATA_ZONE_START_SECTOR;	/* 数据区占据的扇区数量 */
+
+	/* Functions */
+public:
+	/* Constructors */
+	FileSystem();
+	/* Destructors */
+	~FileSystem();
+
+	void Initialize();					/* 初始化成员变量 */
+	void LoadSuperBlock();				/* 系统初始化时读入SuperBlock */
+	SuperBlock* GetFS(short dev);		/* 根据文件存储设备的设备号dev获取该文件系统的SuperBlock */
+	void Update();						/* 将SuperBlock对象的内存副本更新到存储设备的SuperBlock中去 */
+	Inode* IAlloc(short dev);			/* 在存储设备dev上分配一个空闲外存INode，一般用于创建新的文件。 */
+	void IFree(short dev, int number);	/* 释放存储设备dev上编号为number的外存INode，一般用于删除文件。 */
+	Buf* Alloc(short dev);				/* 在存储设备dev上分配空闲磁盘块 */
+	void Free(short dev, int blkno);	/* 释放存储设备dev上编号为blkno的磁盘块 */
+	Mount* GetMount(Inode* pInode);		/* 查找文件系统装配表，搜索指定Inode对应的Mount装配块 */
+
+private:
+	bool BadBlock(SuperBlock* spb, short dev, int blkno);/* 检查设备dev上编号blkno的磁盘块是否属于数据盘块区 */
+
+	/* 属性 */
+public:
+	Mount m_Mount[NMOUNT];		/* 文件系统装配块表，Mount[0]用于根文件系统 */
+
+private:
+	BufferManager* m_BufferManager;		/* FileSystem类需要缓存管理模块(BufferManager)提供的接口 */
+	int updlock;						/* Update()函数的锁，该函数用于同步内存各个SuperBlock副本以及，
+										 * 被修改过的内存Inode。任一时刻只允许一个进程调用该函数 */
+};
+
+#endif

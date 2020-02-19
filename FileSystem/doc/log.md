@@ -127,68 +127,19 @@ public:
 	/* 析构函数 */
 	~Inode();
 	
-	/* 
-	 * @comment 根据Inode对象中的物理磁盘块索引表，读取相应
-	 * 的文件数据
-	 */
-	void ReadI();
-	/* 
-	 * @comment 根据Inode对象中的物理磁盘块索引表，将数据写入文件
-	 */
-	void WriteI();
-	/* 
-	 * @comment 将文件的逻辑块号转换成对应的物理盘块号
-	 */
-	int Bmap(int lbn);
-	
-	/* 
-	 * @comment 对特殊字符设备、块设备文件，调用该设备注册在块设备开关表
-	 * 中的设备初始化程序
-	 */
-	void OpenI(int mode);
-	/* 
-	 * @comment 对特殊字符设备、块设备文件。如果对该设备的引用计数为0，
-	 * 则调用该设备的关闭程序
-	 */
-	void CloseI(int mode);
-	
-	/* 
-	 * @comment 更新外存Inode的最后的访问时间、修改时间
-	 */
-	void IUpdate(int time);
-	/* 
-	 * @comment 释放Inode对应文件占用的磁盘块
-	 */
-	void ITrunc();
-
-	/* 
-	 * @comment 对Pipe或者Inode解锁，并且唤醒因等待锁而睡眠的进程
-	 */
-	void Prele();
-
-	/* 
-	 * @comment 对Pipe上锁，如果Pipe已经被上锁，则增设IWANT标志并睡眠等待直至解锁
-	 */
-	void Plock();
-
-	/*
-	 * @comment 对Pipe或者Inode解锁，并且唤醒因等待锁而睡眠的进程
-	 */
-	void NFrele();
-
-	/*
-	 * @comment 对Pipe上锁，如果Pipe已经被上锁，则增设IWANT标志并睡眠等待直至解锁
-	 */
-	void NFlock();
-
-	/* 
-	 * @comment 清空Inode对象中的数据
-	 */
-	void Clean();
-	/* 
-	 * @comment 将包含外存Inode字符块中信息拷贝到内存Inode中
-	 */
-	void ICopy(Buf* bp, int inumber);
+	void ReadI();                       /* 根据Inode对象中的物理磁盘块索引表，读取相应的文件数据 */
+	void WriteI();                      /* 根据Inode对象中的物理磁盘块索引表，将数据写入文件 */
+	int Bmap(int lbn);                  /* 将文件的逻辑块号转换成对应的物理盘块号 */
+	void OpenI(int mode);               /* 对特殊字符设备、块设备文件，调用该设备注册在块设备开关表中的设备初始化程序 */
+	void CloseI(int mode);              /* 对特殊字符设备、块设备文件。如果对该设备的引用计数为0，则调用该设备的关闭程序 */
+	void IUpdate(int time);             /* 更新外存Inode的最后的访问时间、修改时间 */
+	void ITrunc();                      /* 释放Inode对应文件占用的磁盘块 */
+	void Prele();                       /* 对Pipe或者Inode解锁，并且唤醒因等待锁而睡眠的进程 */	
+	void Plock();                       /* 对Pipe上锁，如果Pipe已经被上锁，则增设IWANT标志并睡眠等待直至解锁 */
+	void NFrele();                      /* 对Pipe或者Inode解锁，并且唤醒因等待锁而睡眠的进程 */
+	void NFlock();                      /* 对Pipe上锁，如果Pipe已经被上锁，则增设IWANT标志并睡眠等待直至解锁 */	
+	void Clean();                       /* 清空Inode对象中的数据 */
+	void ICopy(Buf* bp, int inumber);   /* 将包含外存Inode字符块中信息拷贝到内存Inode中 */
 	
 	/* 属性 */
 public:
@@ -208,6 +159,40 @@ public:
 	int		i_addr[10];		/* 用于文件逻辑块好和物理块好转换的基本索引表 */
 	
 	int		i_lastr;		/* 存放最近一次读取文件的逻辑块号，用于判断是否需要预读 */
+};
+```
+
+### 2.6 InodeTable内存Inode表类
+
+```c++
+class InodeTable
+{
+	/* 静态常属性 */
+public:
+	static const int NINODE	= 100;	/* 内存Inode的数量 */
+	
+	/* 方法 */
+public:
+	/* 构造函数 */
+	InodeTable();
+	/* 析构函数 */
+	~InodeTable();
+	
+	void Initialize();                      /* 初始化对g_FileSystem对象的引用 */
+	Inode* IGet(short dev, int inumber);    /* 根据指定设备号dev，外存Inode编号获取对应
+	                                         * Inode。如果该Inode已经在内存中，对其上锁并返回该内存Inode，
+	                                         * 如果不在内存中，则将其读入内存后上锁并返回该内存Inode */
+	void IPut(Inode* pNode);                /* 减少该内存Inode的引用计数，如果此Inode已经没有目录项指向它，
+	                                         * 且无进程引用该Inode，则释放此文件占用的磁盘块。 */
+	void UpdateInodeTable();                /* 将所有被修改过的内存Inode更新到对应外存Inode中 */
+	int IsLoaded(short dev, int inumber);   /* 检查设备dev上编号为inumber的外存inode是否有内存拷贝，
+	                                         * 如果有则返回该内存Inode在内存Inode表中的索引 */
+	Inode* GetFreeInode();                  /* 在内存Inode表中寻找一个空闲的内存Inode */
+	
+	/* 属性 */
+public:
+	Inode m_Inode[NINODE];		/* 内存Inode数组，每个打开文件都会占用一个内存Inode */
+	FileSystem* m_FileSystem;	/* 对全局对象g_FileSystem的引用 */
 };
 ```
 
@@ -277,6 +262,60 @@ public:
 };
 ```
 
+### 2.9 BufferManager缓存块管理类
+
+```c++
+class BufferManager
+{
+public:
+	/* 静态常属性 */
+	static const int NBUF = 15;			/* 缓存控制块、缓冲区的数量 */
+	static const int BUFFER_SIZE = 512;	/* 缓冲区大小。 以字节为单位 */
+
+    /* 方法 */
+public:
+    /* 构造函数 */
+	BufferManager();
+    /* 析构函数 */
+	~BufferManager();
+	
+	void Initialize();					/* 缓存控制块队列的初始化。将缓存控制块中b_addr指向相应缓冲区首地址。*/
+	
+	Buf* GetBlk(short dev, int blkno);	/* 申请一块缓存，用于读写设备dev上的字符块blkno。*/
+	void Brelse(Buf* bp);				/* 释放缓存控制块buf */
+	void IOWait(Buf* bp);				/* 同步方式I/O，等待I/O操作结束 */
+	void IODone(Buf* bp);				/* I/O操作结束善后处理 */
+
+	Buf* Bread(short dev, int blkno);	/* 读一个磁盘块。dev为主、次设备号，blkno为目标磁盘块逻辑块号。 */
+	Buf* Breada(short adev, int blkno, int rablkno);	/* 读一个磁盘块，带有预读方式。
+														 * adev为主、次设备号。blkno为目标磁盘块逻辑块号，同步方式读blkno。
+														 * rablkno为预读磁盘块逻辑块号，异步方式读rablkno。 */
+	void Bwrite(Buf* bp);				/* 写一个磁盘块 */
+	void Bdwrite(Buf* bp);				/* 延迟写磁盘块 */
+	void Bawrite(Buf* bp);				/* 异步写磁盘块 */
+
+	void ClrBuf(Buf* bp);				/* 清空缓冲区内容 */
+	void Bflush(short dev);				/* 将dev指定设备队列中延迟写的缓存全部输出到磁盘 */
+	bool Swap(int blkno, unsigned long addr, int count, enum Buf::BufFlag flag);
+										/* Swap I/O 用于进程图像在内存和盘交换区之间传输
+										 * blkno: 交换区中盘块号；addr:  进程图像(传送部分)内存起始地址；
+										 * count: 进行传输字节数，byte为单位；传输方向flag: 内存->交换区 or 交换区->内存。 */
+	Buf& GetSwapBuf();					/* 获取进程图像传送请求块Buf对象引用 */
+	Buf& GetBFreeList();				/* 获取自由缓存队列控制块Buf对象引用 */
+
+private:
+	void GetError(Buf* bp);				/* 获取I/O操作中发生的错误信息 */
+	void NotAvail(Buf* bp);				/* 从自由队列中摘下指定的缓存控制块buf */
+	Buf* InCore(short adev, int blkno);	/* 检查指定字符块是否已在缓存中 */
+	
+private:
+	Buf bFreeList;						/* 自由缓存队列控制块 */
+	Buf SwBuf;							/* 进程图像传送请求块 */
+	Buf m_Buf[NBUF];					/* 缓存控制块数组 */
+	unsigned char Buffer[NBUF][BUFFER_SIZE];	/* 缓冲区数组 */
+};
+```
+
 ### 2.8 File文件控制块类
 
 ```c++
@@ -304,6 +343,55 @@ public:
 	int		f_offset;			/* 文件读写位置指针 */
 };
 ```
+
+### 2.9 UserInterface用户接口类
+
+```c++
+class UserInterface
+{
+private:
+    vector<string> DealInput(const string s, const string devider); /* 处理输入的字符串，分析命令和参数 */
+  
+public:
+    /* 构造函数 */
+    UserInterface();
+    /* 析构函数 */
+    ~UserInterface();
+
+    void GetCmd(string user_name);  /* 等待用户输入命令 */
+    void ProcessCmd(string input);  /* 处理用户输入的命令 */
+
+    void fformat();                     /* 格式化文件卷
+                                         * 命令格式 : fformat */
+    set<string> ls();                   /* 列出当前目录下的所有文件和文件夹
+                                         * 命令格式 : ls */
+    int mkdir(string dir_name);         /* 在当前目录下创建文件夹
+                                         * 命令格式 : mkdir <dir_name> */
+    int fcreat(string f_name);          /* 创建文件
+                                         * 命令格式 : fcreat <f_name> */
+    int fopen(string f_name);           /* 打开文件
+                                         * 命令格式 : fopen <f_name> */
+    void fclose();                      /* 关闭文件
+                                         * 命令格式 : fclose <f_name> */
+    int fdelete(string f_name);         /* 删除文件
+                                         * 命令格式 : fdelete <f_name> */
+    int fread(char *buf, int length);   /* 读取文件
+                                         * 命令格式 : fread <buf><length> */
+    int fwrite(char *buf, int length);  /* 写入文件
+                                         * 命令格式 : fwrite <buf><length> */
+    void flseek(int offset);            /* 定位文件读写指针
+                                         * 命令格式 : flseek <offset> */
+    
+    void help();                        /* 获取帮助
+                                         * 命令格式 : help */
+    int cd(string dir_name);            /* 更换路径
+                                         * 命令格式 : cd <sir_name>*/
+};
+```
+
+
+
+### 2.10 
 
 
 

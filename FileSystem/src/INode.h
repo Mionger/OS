@@ -64,68 +64,20 @@ public:
 	/* 析构函数 */
 	~Inode();
 	
-	/* 
-	 * @comment 根据Inode对象中的物理磁盘块索引表，读取相应
-	 * 的文件数据
-	 */
-	void ReadI();
-	/* 
-	 * @comment 根据Inode对象中的物理磁盘块索引表，将数据写入文件
-	 */
-	void WriteI();
-	/* 
-	 * @comment 将文件的逻辑块号转换成对应的物理盘块号
-	 */
-	int Bmap(int lbn);
 	
-	/* 
-	 * @comment 对特殊字符设备、块设备文件，调用该设备注册在块设备开关表
-	 * 中的设备初始化程序
-	 */
-	void OpenI(int mode);
-	/* 
-	 * @comment 对特殊字符设备、块设备文件。如果对该设备的引用计数为0，
-	 * 则调用该设备的关闭程序
-	 */
-	void CloseI(int mode);
-	
-	/* 
-	 * @comment 更新外存Inode的最后的访问时间、修改时间
-	 */
-	void IUpdate(int time);
-	/* 
-	 * @comment 释放Inode对应文件占用的磁盘块
-	 */
-	void ITrunc();
-
-	/* 
-	 * @comment 对Pipe或者Inode解锁，并且唤醒因等待锁而睡眠的进程
-	 */
-	void Prele();
-
-	/* 
-	 * @comment 对Pipe上锁，如果Pipe已经被上锁，则增设IWANT标志并睡眠等待直至解锁
-	 */
-	void Plock();
-
-	/*
-	 * @comment 对Pipe或者Inode解锁，并且唤醒因等待锁而睡眠的进程
-	 */
-	void NFrele();
-
-	/*
-	 * @comment 对Pipe上锁，如果Pipe已经被上锁，则增设IWANT标志并睡眠等待直至解锁
-	 */
-	void NFlock();
-
-	/* 
-	 * @comment 清空Inode对象中的数据
-	 */
-	void Clean();
-	/* 
-	 * @comment 将包含外存Inode字符块中信息拷贝到内存Inode中
-	 */
-	void ICopy(Buf* bp, int inumber);
+	void ReadI();                       /* 根据Inode对象中的物理磁盘块索引表，读取相应的文件数据 */
+	void WriteI();                      /* 根据Inode对象中的物理磁盘块索引表，将数据写入文件 */
+	int Bmap(int lbn);                  /* 将文件的逻辑块号转换成对应的物理盘块号 */
+	void OpenI(int mode);               /* 对特殊字符设备、块设备文件，调用该设备注册在块设备开关表中的设备初始化程序 */
+	void CloseI(int mode);              /* 对特殊字符设备、块设备文件。如果对该设备的引用计数为0，则调用该设备的关闭程序 */
+	void IUpdate(int time);             /* 更新外存Inode的最后的访问时间、修改时间 */
+	void ITrunc();                      /* 释放Inode对应文件占用的磁盘块 */
+	void Prele();                       /* 对Pipe或者Inode解锁，并且唤醒因等待锁而睡眠的进程 */	
+	void Plock();                       /* 对Pipe上锁，如果Pipe已经被上锁，则增设IWANT标志并睡眠等待直至解锁 */
+	void NFrele();                      /* 对Pipe或者Inode解锁，并且唤醒因等待锁而睡眠的进程 */
+	void NFlock();                      /* 对Pipe上锁，如果Pipe已经被上锁，则增设IWANT标志并睡眠等待直至解锁 */	
+	void Clean();                       /* 清空Inode对象中的数据 */
+	void ICopy(Buf* bp, int inumber);   /* 将包含外存Inode字符块中信息拷贝到内存Inode中 */
 	
 	/* 属性 */
 public:
