@@ -28,10 +28,10 @@ public:
 	int 			padding;	/* 填充位，和devtab强制类型转换时防止出错 */
 
 	/* 缓存控制块队列勾连指针 */
-	Buf*	b_forw;			/* 自由队列 */
-	Buf*	b_back;			/* 自由队列 */
-	Buf*	av_forw;		/* NODEV队列 */
-	Buf*	av_back;		/* NODEV队列 */
+	Buf*	b_forw;			/* NODEV队列 */
+	Buf*	b_back;			/* NODEV队列 */
+	Buf*	av_forw;		/* 自由队列 */
+	Buf*	av_back;		/* 自由队列 */
 	
 	short			b_dev;			/* 主、次设备号，其中高8位是主设备号，低8位是次设备号 */
 	int				b_wcount;		/* 需传送的字节数 */
