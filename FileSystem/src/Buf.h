@@ -2,7 +2,7 @@
 #define BUF_H
 
 /*
- * 缓存控制块(buf)定义
+ * 缓存控制块(buf)类定义
  * 记录了相应缓存的使用情况等信息；
  * 同时兼任I/O请求块，记录该缓存
  * 相关的I/O请求和执行结果。
@@ -10,7 +10,8 @@
 class Buf
 {
 public:
-	enum BufFlag	/* b_flags中标志位 */
+	/* b_flags中标志位 */
+	enum BufFlag	
 	{
 		B_WRITE  = 0x1,		/* 写操作。将缓存中的信息写到硬盘上去 */
 		B_READ	 = 0x2,		/* 读操作。从盘读取信息到缓存中 */
@@ -23,22 +24,22 @@ public:
 	};
 	
 public:
-	unsigned int b_flags;	/* 缓存控制块标志位 */
-	
-	int		padding;		/* 4字节填充，使得b_forw和b_back在Buf类中与Devtab类中的字段顺序能够一致，否则强制转换会出错。 */
+	unsigned int 	b_flags;	/* 缓存控制块标志位 */
+	int 			padding;	/* 填充位，和devtab强制类型转换时防止出错 */
 
 	/* 缓存控制块队列勾连指针 */
-	Buf*	b_forw;
-	Buf*	b_back;
-	Buf*	av_forw;
-	Buf*	av_back;
+	Buf*	b_forw;			/* 自由队列 */
+	Buf*	b_back;			/* 自由队列 */
+	Buf*	av_forw;		/* NODEV队列 */
+	Buf*	av_back;		/* NODEV队列 */
 	
-	short	b_dev;			/* 主、次设备号，其中高8位是主设备号，低8位是次设备号 */
-	int		b_wcount;		/* 需传送的字节数 */
-	unsigned char* b_addr;	/* 指向该缓存控制块所管理的缓冲区的首地址 */
-	int		b_blkno;		/* 磁盘逻辑块号 */
-	int		b_error;		/* I/O出错时信息 */
-	int		b_resid;		/* I/O出错时尚未传送的剩余字节数 */
+	short			b_dev;			/* 主、次设备号，其中高8位是主设备号，低8位是次设备号 */
+	int				b_wcount;		/* 需传送的字节数 */
+	unsigned char* 	b_addr;			/* 指向该缓存控制块所管理的缓冲区的首地址 */
+	int				b_blkno;		/* 磁盘逻辑块号 */
+
+	Buf();
+	~Buf();
 };
 
 #endif
