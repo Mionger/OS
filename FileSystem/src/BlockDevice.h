@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <string>
+#include "DevTab.h"
 using namespace std;
 
 /*
@@ -11,43 +12,23 @@ using namespace std;
 class BlockDevice
 {
 private:
-    string  d_name;    /* 虚拟磁盘文件名 */
+    string  d_name;     /* 虚拟磁盘文件名 */
     fstream fs;         /* 文件操作流 */
+    
 
 public:
     BlockDevice(string device_name);
     ~BlockDevice();
 
+    DevTab *d_tab;      /* 文件控制表项 */
+
     bool IfExist();                                     /* 判断对应的磁盘文件是否存在 */
+    string GetName();                                   /* 获取块设备名称 */
+    void SetDevTab(DevTab *d_tab);                      /* 设置设备对应的文件控制表项 */
+    void InitDevTab();                                  /* 初始化文件控制表项 */
     void write(char *buf, int buf_size, int offset);    /* 向块设备写入 */
     void read(char *buf, int buf_size, int offset);     /* 从块设备读取 */
 };
 
 #endif
 
-#ifndef DEV_TAB_H
-#define DEV_TAB_H
-
-#include "Buf.h"
-
-/* 
- * 块设备表(DevTab)类定义
- */
-class DevTab
-{
-public:
-	DevTab();
-	~DevTab();
-	
-public:
-	int	d_active;
-	int	d_errcnt;
-
-    /* 缓存控制块队列勾连指针 */
-	Buf* b_forw;        /* 设备队列 */
-	Buf* b_back;        /* 设备队列 */
-	Buf* d_actf;        /* i/o请求队列 */
-	Buf* d_actl;        /* i/o请求队列 */
-};
-
-#endif

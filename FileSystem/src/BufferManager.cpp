@@ -1,5 +1,6 @@
-#include "BufferManager.h"
 #include<iostream>
+#include "BufferManager.h"
+
 using namespace std;
 
 BufferManager::BufferManager()
@@ -88,4 +89,74 @@ void BufferManager::BufInsertFree(Buf *buf)
         this->bFreeList.av_back = buf;
         return;
     }
+}
+
+/* 设置设备管理器 */
+void BufferManager::SetDevMngr(DeviceManager *DevMngr)
+{
+    this->m_DeviceManager = DevMngr;
+    return;
+}
+
+/* 为指定盘块号的块申请一个高速缓存 */
+Buf *BufferManager::GetBuf(short dev, int blkno)
+{
+    Buf *new_buf;
+    DevTab *dev_ptr;
+
+    /* NODEV队列 */
+    if (-1 == dev)
+    {
+        dev_ptr = (DevTab *)(&this->bFreeList);
+    }
+    /* 设备队列中寻找对应缓存块 */
+    else
+    {
+        dev_ptr = this->m_DeviceManager->GetBlockDevice(dev).d_tab;
+        for (new_buf = dev_ptr->b_forw; new_buf != (Buf *)dev_ptr; new_buf = new_buf->b_forw)
+        {
+            if (new_buf->b_blkno != blkno || new_buf->b_dev != dev)
+                continue;
+            BufGetFree(new_buf);
+            return new_buf;
+        }
+    }
+
+    /* 自由队列空 */
+    if (this->bFreeList.av_forw == &(this->bFreeList))
+    {
+        cout << "ERROR CODE 001" << endl;
+        return NULL;
+    }
+    else
+    {
+        /* 自由队列非空，取第一个(最早插入的)空闲块 */
+        new_buf = this->bFreeList.av_forw;
+        BufGetFree(new_buf);
+
+        /* 原缓存块设置延迟写，需要立刻同步到磁盘 */
+        if (new_buf->b_flags & Buf::B_DELWRI)
+        {
+            m_DeviceManager->GetBlockDevice(new_buf->b_dev).write((char *)new_buf->b_addr, BUFFER_SIZE, new_buf->b_blkno * 512);
+        }
+
+        /* 从原有的设备队列取出 */
+        new_buf->b_forw->b_back = new_buf->b_back;
+        new_buf->b_back->b_forw = new_buf->b_forw;
+
+        /* 放入新的设备队列 */
+        new_buf->b_forw = dev_ptr->b_forw;
+        new_buf->b_back = (Buf *)dev_ptr;
+        dev_ptr->b_forw->b_back = new_buf;
+        dev_ptr->b_forw = new_buf;
+        
+        /* 设置缓存块新参数信息 */
+        new_buf->b_dev = dev;
+        new_buf->b_blkno = blkno;
+
+        /* 复位缓存块标志位 */
+        new_buf->b_flags &= ~(Buf::B_DELWRI | Buf::B_DONE);
+
+        return new_buf;
+    } 
 }
