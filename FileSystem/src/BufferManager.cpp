@@ -25,7 +25,7 @@ void BufferManager::Initialize()
     this->bFreeList.av_back = &(this->bFreeList);
 
     Buf *buf_ptr;
-    for (int i = 0; i < this->NBUF; i++)
+    for (int i = 0; i < BufferManager::NBUF; i++)
     {
         buf_ptr = &(this->m_Buf[i]);
 
@@ -159,4 +159,39 @@ Buf *BufferManager::GetBuf(short dev, int blkno)
 
         return new_buf;
     } 
+}
+
+/* 释放指定缓存控制块 */
+void BufferManager::FreeBuf(Buf *buf)
+{
+    /* 单用户单进程的话不用考虑等待等问题 */
+    /* 只需要从IO请求队列移出，拿到自由队列 
+     * 两者共用同一对指针，因此只考虑这对指针的变化就可以
+     */
+    BufInsertFree(buf);
+    return;
+}
+
+/* 清除指定的缓存块的全部内容 */
+void BufferManager::ClearBuf(Buf *buf)
+{
+    int *int_ptr = (int *)buf->b_addr;
+    for (int i = 0; i < BufferManager::BUFFER_SIZE / sizeof(int); i++)
+    {
+        int_ptr[i] = 0;
+    }
+    return;
+}
+
+/* 将一个缓存块的内容设置延迟写 */
+void BufferManager::DelWriteBuf(Buf *buf)
+{
+    /* 设置标记位 */
+    buf->b_flags |= Buf::B_DELWRI;
+    buf->b_flags |= Buf::B_DONE;
+
+    /* 释放缓存块 */
+    FreeBuf(buf);
+
+    return;
 }
