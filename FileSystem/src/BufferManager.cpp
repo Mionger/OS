@@ -137,7 +137,7 @@ Buf *BufferManager::GetBuf(short dev, int blkno)
         /* 原缓存块设置延迟写，需要立刻同步到磁盘 */
         if (new_buf->b_flags & Buf::B_DELWRI)
         {
-            m_DeviceManager->GetBlockDevice(new_buf->b_dev).write((char *)new_buf->b_addr, BUFFER_SIZE, new_buf->b_blkno * 512);
+            m_DeviceManager->GetBlockDevice(new_buf->b_dev).write(new_buf->b_addr, BUFFER_SIZE, new_buf->b_blkno * 512);
         }
 
         /* 从原有的设备队列取出 */
@@ -164,8 +164,8 @@ Buf *BufferManager::GetBuf(short dev, int blkno)
 /* 释放指定缓存控制块 */
 void BufferManager::FreeBuf(Buf *buf)
 {
-    /* 单用户单进程的话不用考虑等待等问题 */
-    /* 只需要从IO请求队列移出，拿到自由队列 
+    /* 单用户单进程的话不用考虑等待等问题
+     * 只需要从IO请求队列移出，拿到自由队列 
      * 两者共用同一对指针，因此只考虑这对指针的变化就可以
      */
     BufInsertFree(buf);
@@ -194,4 +194,66 @@ void BufferManager::DelWriteBuf(Buf *buf)
     FreeBuf(buf);
 
     return;
+}
+
+/* 读磁盘的指定盘块到缓存块 */
+Buf *BufferManager::ReadBuf(int blkno)
+{
+    Buf *buf = GetBuf(DeviceManager::ROOTDEV, blkno);
+    
+    /* 获取到的块之前操作过或者被设置过延迟写可以直接使用 */
+    if (buf->b_flags & Buf::B_DONE || buf->b_flags & Buf::B_DELWRI)
+    {
+        return buf;
+    }
+    /* 从磁盘对应位置读取数据 */
+    else
+    {
+        m_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).read(buf->b_addr, BufferManager::BUFFER_SIZE, buf->b_blkno * 512);
+        return buf;
+    }
+}
+
+/* 将一个缓存块的内容写入磁盘对应盘块 */
+void BufferManager::WriteBuf(Buf *buf)
+{
+    /* 清除延迟写标记 */
+    buf->b_flags &= ~Buf::B_DELWRI;
+    /* 执行写操作 */
+    m_DeviceManager->GetBlockDevice(buf->b_dev).write(buf->b_addr, BufferManager::BUFFER_SIZE, buf->b_blkno * 512);
+    /* 设置完成标记DONE */
+    buf->b_flags |= Buf::B_DONE;
+
+    return;
+}
+
+/* 将dev指定的设备队列的延迟写的缓存块的内容写入对应的磁盘盘块 */
+void BufferManager::FlushBuf(short dev)
+{
+    Buf *buf;
+    for (buf = this->bFreeList.av_forw; buf != &(this->bFreeList); buf = buf->av_forw)
+    {
+        /* 找出自由队列中所有延迟写的块 */
+        if ((buf->b_flags & Buf::B_DELWRI) && (DeviceManager::NODEV == dev || buf->b_dev == dev))
+        {
+            /* 将缓存块的内容写入磁盘对应盘块 */
+            WriteBuf(buf);
+            
+            /* 将缓存加入到自由队列，此时同时在自由队列和设备队列 */
+            FreeBuf(buf);
+        }
+    }
+    return;
+}
+
+/* 获取缓存的自由队列链表头 */
+Buf &BufferManager::GetBufFreeList()
+{
+    return this->bFreeList;
+}
+
+/* 获取指定序号的缓存块的首地址 */
+char *BufferManager::GetBuf(int blkno)
+{
+    return Buffer[blkno];
 }

@@ -35,7 +35,7 @@ public:
 	
 	short			b_dev;			/* 主、次设备号，其中高8位是主设备号，低8位是次设备号 */
 	int				b_wcount;		/* 需传送的字节数 */
-	unsigned char* 	b_addr;			/* 指向该缓存控制块所管理的缓冲区的首地址 */
+	char* 			b_addr;			/* 指向该缓存控制块所管理的缓冲区的首地址 */
 	int				b_blkno;		/* 磁盘逻辑块号 */
 
 	Buf();
