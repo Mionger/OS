@@ -5,50 +5,91 @@
 
 int main()
 {
+    /* 块设备读写测试 */
+    // BlockDevice *os_BlockDevice = new BlockDevice("disk_a.img");
+    // Buf temp;
+    // temp.b_addr = new unsigned char[BufferManager::BUFFER_SIZE];
+    // for (int j = 0; j < BufferManager::BUFFER_SIZE; j++)
+    // {
+    //     if (0 == j % 2)
+    //         temp.b_addr[j] = 'a';
+    //     else
+    //         temp.b_addr[j] = 'b';
+    // }
+    // for (int j = 0; j < BufferManager::BUFFER_SIZE;j++)
+    // {
+    //     if (0 == j % 16)
+    //         cout << endl;
+    //     cout << temp.b_addr[j];
+    // }
+    // cout << endl;
+    // os_BlockDevice->write(temp.b_addr, BufferManager::BUFFER_SIZE, 512);
+    // delete temp.b_addr;
+
+    /* 加载设备管理模块 */
+    cout << "Start to lunch the disk device..." << endl;
     DeviceManager os_DeviceManager;
-    cout << os_DeviceManager.GetBlockDevice(0).GetName()<<" mounted..." << endl;
-
-    BufferManager os_BufferManager;
-    cout << "Initialize buffer manager secceed!" << endl;
-    os_BufferManager.SetDevMngr(&os_DeviceManager);
-    // Buf *buf_ptr = os_BufferManager.bFreeList.av_back;
-    // while (buf_ptr != &(os_BufferManager.bFreeList))
-    // {
-    //     cout << char(buf_ptr->b_addr[0]) << endl;
-    //     buf_ptr = buf_ptr->av_back;
-    // }
-
-    // Buf *temp = os_BufferManager.bFreeList.av_back;
-    // os_BufferManager.BufGetFree(temp);
-
-    // buf_ptr = os_BufferManager.bFreeList.av_back;
-    // while (buf_ptr != &(os_BufferManager.bFreeList))
-    // {
-    //     cout << char(buf_ptr->b_addr[0]) << endl;
-    //     buf_ptr = buf_ptr->av_back;
-    // }
-
-    // os_BufferManager.BufInsertFree(temp);
-    // buf_ptr = os_BufferManager.bFreeList.av_back;
-    // while (buf_ptr != &(os_BufferManager.bFreeList))
-    // {
-    //     cout << char(buf_ptr->b_addr[0]) << endl;
-    //     buf_ptr = buf_ptr->av_back;
-    // }
-
-    // os_DeviceManager.GetBlockDevice(0).write((char *)(os_BufferManager.Buffer[0]), os_BufferManager.BUFFER_SIZE, 0);
-    // os_DeviceManager.GetBlockDevice(0).read((char *)(os_BufferManager.Buffer[14]), os_BufferManager.BUFFER_SIZE, 0);
-    // buf_ptr = os_BufferManager.bFreeList.av_back;
-    // while (buf_ptr != &(os_BufferManager.bFreeList))
-    // {
-    //     cout << char(buf_ptr->b_addr[0]) << endl;
-    //     buf_ptr = buf_ptr->av_back;
-    // }
-
-    string user_name = "root";
-    UserInterface UI;
-    // UI.GetCmd(user_name);
-
+    cout << os_DeviceManager.GetBlockDevice(0).GetName()<<" successfully launched!" << endl;
     
+    /* 加载缓存管理模块 */
+    cout << "Start to lunch the buffer manager..." << endl;
+    BufferManager os_BufferManager;
+    cout << "Finished to lunch the buffer manager!" << endl;
+
+    /*挂载设备管理模块 */
+    cout << "Start to mount the device..." << endl;
+    os_BufferManager.SetDevMngr(&os_DeviceManager);
+    cout << "Finished to mount the device!" << endl;
+
+    Buf *buf_ptr;
+
+    /* 遍历输出初始化的自由队列 */
+    cout << "初始自由队列 : " << endl;
+    buf_ptr = os_BufferManager.GetBufFreeList().av_back;
+    Buf *freelist = buf_ptr->av_forw;
+    while (buf_ptr != freelist)
+    {
+        cout << buf_ptr->b_addr[0] << endl;
+        buf_ptr = buf_ptr->av_back;
+    }
+
+    buf_ptr = os_BufferManager.GetBufFreeList().av_back;
+    freelist = buf_ptr->av_forw;
+    while (buf_ptr != freelist)
+    {
+        for (int j = 0; j < BufferManager::BUFFER_SIZE;j++)
+        {
+            cout << buf_ptr->b_addr[j];
+        }
+        cout << endl;
+        buf_ptr = buf_ptr->av_back;
+    }   
+
+    /* 把缓存都移到磁盘的设备队列，并写入磁盘 */
+    cout << "Start to write all buffers to the disk..." << endl;
+    for (int i = 0; i <= BufferManager::NBUF; i++)
+    {
+        buf_ptr = os_BufferManager.GetBuf(DeviceManager::ROOTDEV, i);
+        cout << "Get the " << buf_ptr->b_blkno << " buffer done!" << endl;
+        os_BufferManager.WriteBuf(buf_ptr);
+        cout << "Write the " << buf_ptr->b_addr[0] << " buffer done!" << endl;
+        os_BufferManager.FreeBuf(buf_ptr);
+    }
+
+    // buf_ptr = os_BufferManager.GetBufFreeList().av_back;
+    // freelist = buf_ptr->av_forw;
+    // while (buf_ptr != freelist)
+    // {
+    //     for (int j = 0; j < BufferManager::BUFFER_SIZE;j++)
+    //     {
+    //         cout << buf_ptr->b_addr[j];
+    //     }
+    //     cout << endl;
+    //     buf_ptr = buf_ptr->av_back;
+    // } 
+
+    // string user_name = "root";
+    // UserInterface UI;
+
     return 0;
 }

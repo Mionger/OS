@@ -13,7 +13,7 @@ Buf::Buf()
     this->b_dev = -1;
     this->b_wcount = 0;
     this->b_addr = NULL;
-    this->b_blkno = 0;
+    this->b_blkno = -1;
 }
 
 Buf::~Buf()
