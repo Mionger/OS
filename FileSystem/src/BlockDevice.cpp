@@ -1,22 +1,20 @@
 #include "BlockDevice.h"
 
-BlockDevice::BlockDevice(string device_name)
+BlockDevice::BlockDevice(char* device_name)
 {
     this->d_name = device_name;
-    // this->fs.open(d_name, ios::binary | ios::in | ios::out);
-    this->fp = fopen("disk_a.img", "rb+");
+    this->fp = fopen(this->d_name, "rb+");
 }
 
 BlockDevice::~BlockDevice()
 {
-    fclose(fp);
-    // this->fs.close();
+    fclose(this->fp);
 }
 
 /* 判断对应的磁盘文件是否存在 */
 bool BlockDevice::IfExist()
 {
-    return this->fs.is_open();
+    return (NULL != this->fp);
 }
 
 /* 获取块设备名称 */
@@ -46,13 +44,13 @@ void BlockDevice::InitDevTab()
 /* 向块设备写入 */
 void BlockDevice::write(char *buf, int buf_size, int offset)
 {
-    fseek(fp, long(offset), SEEK_SET);
-    fwrite((void *)buf, buf_size, sizeof(char), fp);
+    fseek(this->fp, long(offset), SEEK_SET);
+    fwrite((void *)buf, buf_size, sizeof(char), this->fp);
 }
 
 /* 从块设备读取 */
 void BlockDevice::read(char *buf, int buf_size, int offset)
 {
-    fseek(fp, long(offset), SEEK_SET);
-    fread((void *)buf, buf_size, sizeof(char), fp);
+    fseek(this->fp, long(offset), SEEK_SET);
+    fread((void *)buf, buf_size, sizeof(char), this->fp);
 }

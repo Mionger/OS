@@ -30,9 +30,10 @@ int main()
 
     /* 加载文件系统 */
     FileSystem *os_FileSystem = new FileSystem(d_name);
+    
+    /* 格式化文件系统 */
     os_FileSystem->FormatDisk();
 
-    os_FileSystem->ResetGroupLinkBlkInfo();
 
     /*******************以下为缓存控制部分的读写测试 *********************/
     // Buf *buf_ptr;

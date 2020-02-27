@@ -2,7 +2,6 @@
 #define BLOCK_DEVICE_H
 
 #include <fstream>
-#include <string>
 #include "DevTab.h"
 using namespace std;
 
@@ -12,13 +11,11 @@ using namespace std;
 class BlockDevice
 {
 private:
-    string  d_name;     /* 虚拟磁盘文件名 */
-    fstream fs;         /* 文件操作流 */
-
+    char *d_name;       /* 虚拟磁盘文件名 */
     FILE *fp;           /* 文件指针 */
 
 public:
-    BlockDevice(string device_name);
+    BlockDevice(char *device_name);
     ~BlockDevice();
 
     DevTab *d_tab;      /* 文件控制表项 */

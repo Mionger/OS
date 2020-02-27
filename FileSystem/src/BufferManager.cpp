@@ -16,7 +16,7 @@ BufferManager::~BufferManager()
 /* 缓存控制块队列的初始化。将缓存控制块中b_addr指向相应缓冲区首地址。 */
 void BufferManager::Initialize()
 {
-    cout << "Start to initialize buffer manager..." << endl;
+    // cout << "Start to initialize buffer manager..." << endl;
 
     /* 初始化自由队列和NODEV队列 */
     this->bFreeList.b_forw = &(this->bFreeList);
@@ -31,8 +31,8 @@ void BufferManager::Initialize()
 
         /* 缓冲区定位 */
         buf_ptr->b_addr = &(this->Buffer[i][0]);
-        for (int j = 0; j < BufferManager::BUFFER_SIZE; j++)
-            buf_ptr->b_addr[j] = char('a' + i);
+        // for (int j = 0; j < BufferManager::BUFFER_SIZE; j++)
+        //     buf_ptr->b_addr[j] = char('a' + i);
 
         Buf *temp = this->bFreeList.b_forw;
         
@@ -48,7 +48,7 @@ void BufferManager::Initialize()
         this->bFreeList.av_back = buf_ptr;
         buf_ptr->av_forw = &(this->bFreeList);
 
-        cout << "Successfully insert a buffer!" << endl;
+        // cout << "Successfully insert a buffer!" << endl;
     }
 
     return;

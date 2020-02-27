@@ -1,8 +1,8 @@
 #include "DeviceManager.h"
 
-DeviceManager::DeviceManager()
+DeviceManager::DeviceManager(char *root_device)
 {
-    Initialize();
+    Initialize(root_device);
 }
 
 DeviceManager::~DeviceManager()
@@ -10,11 +10,11 @@ DeviceManager::~DeviceManager()
     
 }
 
-void DeviceManager::Initialize()
+void DeviceManager::Initialize(char* root_device)
 {
     /* 挂载硬盘文件 */
     this->dev_tab[0] = new DevTab;
-    this->bdevsw[0] = new BlockDevice("a.img");
+    this->bdevsw[0] = new BlockDevice(root_device);
     this->bdevsw[0]->SetDevTab(this->dev_tab[0]);
     this->bdevsw[0]->InitDevTab();
     this->nblkdev = 1;
