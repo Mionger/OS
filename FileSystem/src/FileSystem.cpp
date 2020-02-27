@@ -110,6 +110,12 @@ void FileSystem::FormatDisk()
     /* 格式化并保存文件数据区 */
     BlkInit();
 
+    /* 初始化SuperBlock直接管理的DiskINode */
+    ResetDiskINodeInfo();
+
+    /* 将空闲盘块成组链接 */
+    ResetGroupLinkBlkInfo();
+
     return;
 }
 
@@ -170,5 +176,37 @@ void FileSystem::ResetGroupLinkBlkInfo()
 
     SaveSupBlk();
 
+    return;
+}
+
+/* 初始化SuperBlock直接管理的DiskINode */
+void FileSystem::ResetDiskINodeInfo()
+{
+    /* SuperBlock直接管理的磁盘INode */
+    os_SuperBlock->s_ninode = 0;
+    int inode_num = FileSystem::INODE_SECTOR_NUM * FileSystem::INODE_PER_SECTOR;
+    int inode_cnt = 0;
+    DiskINode d_inode;
+    while (os_SuperBlock->s_ninode < 100 && inode_cnt < inode_num)
+    {
+        while(true)
+        {
+            /* 从磁盘中读取序号为inode_cnt的DiskINode */
+            this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).read((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * inode_cnt);
+            /* 如果这个外存inode没被分配 */
+            if (!(d_inode.d_mode & ALLOCED))
+            {
+                os_SuperBlock->s_inode[os_SuperBlock->s_ninode] = inode_cnt;
+                inode_cnt++;
+                os_SuperBlock->s_ninode++;
+                break;
+            }
+            /* 如果被分配 */
+            else
+            {
+                inode_cnt++;   
+            }
+        }
+    }
     return;
 }

@@ -15,6 +15,9 @@ private:
     void DiskINodeInit();           /* 不通过从磁盘读取初始化DiskINode */
     void BlkInit();                 /* 不通过从磁盘读取初始化文件数据区 */
 
+    void ResetDiskINodeInfo();      /* 初始化SuperBlock直接管理的DiskINode */
+    void ResetGroupLinkBlkInfo();   /* 使用成组链接法重置全部盘块信息 */
+
 public:
     FileSystem(char *root_dev_name);
     ~FileSystem();
@@ -37,13 +40,11 @@ public:
 
     void FormatDisk();                  /* 格式化磁盘 */
 
-    void ResetGroupLinkBlkInfo();       /* 使用成组链接法重置全部盘块信息 */
-
     int AllocDickINode();               /* 分配一个DiskINode */
     void FreeDiskINode(int i_no);       /* 释放一个DiskINode */
 
     int AllocBlk();                     /* 分配一个Block */
-    void FreeBlk();                     /* 释放一个Block */
+    void FreeBlk(int i_no);             /* 释放一个Block */
 };
 
 #endif
