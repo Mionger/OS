@@ -98,27 +98,6 @@ void FileSystem::BlkInit()
     return;
 }
 
-/* 格式化磁盘 */
-void FileSystem::FormatDisk()
-{
-    /* 格式化并保存SuperBlock */
-    SupBlkInit();
-
-    /* 格式化并保存磁盘inode */
-    DiskINodeInit();
-
-    /* 格式化并保存文件数据区 */
-    BlkInit();
-
-    /* 初始化SuperBlock直接管理的DiskINode */
-    ResetDiskINodeInfo();
-
-    /* 将空闲盘块成组链接 */
-    ResetGroupLinkBlkInfo();
-
-    return;
-}
-
 /* 使用成组链接法重置全部盘块信息 */
 void FileSystem::ResetGroupLinkBlkInfo()
 {
@@ -174,7 +153,7 @@ void FileSystem::ResetGroupLinkBlkInfo()
     }
     os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).write((char *)&temp_blk, sizeof(temp_blk), BufferManager::BUFFER_SIZE * next_group_pos);
 
-    SaveSupBlk();
+    this->os_SuperBlock->s_fmod = 1;
 
     return;
 }
@@ -208,5 +187,120 @@ void FileSystem::ResetDiskINodeInfo()
             }
         }
     }
+
+    /* 设置SuperBlock被修改标记 */
+    this->os_SuperBlock->s_fmod = 1;
+
     return;
 }
+
+/* 分配一个DiskINode */
+int FileSystem::AllocDiskINode()
+{
+    DiskINode d_inode;
+
+    /* 没有SuperBlock直接管理的DiskInode */
+    if (0 == this->os_SuperBlock->s_ninode)
+    {
+        int inode_num = FileSystem::INODE_SECTOR_NUM * FileSystem::INODE_PER_SECTOR;
+        int inode_cnt = 0;
+        while (os_SuperBlock->s_ninode < 100 && inode_cnt < inode_num)
+        {
+            while(true)
+            {
+                /* 从磁盘中读取序号为inode_cnt的DiskINode */
+                this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).read((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * inode_cnt);
+                /* 如果这个外存inode没被分配 */
+                if (!(d_inode.d_mode & ALLOCED))
+                {
+                    os_SuperBlock->s_inode[os_SuperBlock->s_ninode] = inode_cnt;
+                    inode_cnt++;
+                    os_SuperBlock->s_ninode++;
+                    break;
+                }
+                /* 如果被分配 */
+                else
+                {
+                    inode_cnt++;   
+                }
+            }
+        }
+    }
+
+    /* DiskINode用尽 */
+    if(0 == this->os_SuperBlock->s_ninode)
+    {
+        cout << "ERROR CODE 002" << endl;
+    }
+
+    int inode_no = this->os_SuperBlock->s_inode[--this->os_SuperBlock->s_ninode];
+    /* 从磁盘中读取序号为inode_cnt的DiskINode */
+    this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).read((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * inode_no);
+    /* 对刚刚分配的DiskINode的处理 */
+    d_inode.d_mode |= ALLOCED;
+    /* 占用信息更新到磁盘 */
+    this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).write((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * inode_no);
+
+    /* 设置SuperBlock被修改标记 */
+    this->os_SuperBlock->s_fmod = 1;
+
+    return inode_no;
+}
+
+/* 释放一个DiskINode */
+void FileSystem::FreeDiskINode(int i_no)
+{
+    DiskINode d_inode;
+
+    /* SuperBlock直接管理的DiskINode有剩余位置 */
+    if (this->os_SuperBlock->s_ninode < 100)
+    {
+        this->os_SuperBlock->s_inode[this->os_SuperBlock->s_ninode++] = i_no;
+        /* 从磁盘中读取序号为inode_cnt的DiskINode */
+        this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).read((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * i_no);
+        /* 对刚刚分配的DiskINode的处理 */
+        d_inode.d_mode &= ~(ALLOCED);
+        /* 占用信息更新到磁盘 */
+        this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).write((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * i_no);
+
+        /* 设置SuperBlock被修改标记 */
+        this->os_SuperBlock->s_fmod = 1;
+    }
+    /* SuperBlock直接管理的DiskINode没有剩余位置 */
+    else
+    {
+        /* 从磁盘中读取序号为inode_cnt的DiskINode */
+        this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).read((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * i_no);
+        /* 对刚刚分配的DiskINode的处理 */
+        d_inode.d_mode &= ~(ALLOCED);
+        /* 占用信息更新到磁盘 */
+        this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).write((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * i_no);
+    }
+
+    return;
+}
+
+/* 格式化磁盘 */
+void FileSystem::FormatDisk()
+{
+    /* 格式化并保存SuperBlock */
+    SupBlkInit();
+
+    /* 格式化并保存磁盘inode */
+    DiskINodeInit();
+
+    /* 格式化并保存文件数据区 */
+    BlkInit();
+
+    /* 初始化SuperBlock直接管理的DiskINode */
+    ResetDiskINodeInfo();
+
+    /* 将空闲盘块成组链接 */
+    ResetGroupLinkBlkInfo();
+
+    /* 保存整理的SuperBlock直接管理的DiskINode和磁盘盘块的信息 */
+    SaveSupBlk();
+
+    return;
+}
+

@@ -40,11 +40,11 @@ public:
 
     void FormatDisk();                  /* 格式化磁盘 */
 
-    int AllocDickINode();               /* 分配一个DiskINode */
+    int AllocDiskINode();               /* 分配一个DiskINode */
     void FreeDiskINode(int i_no);       /* 释放一个DiskINode */
 
     int AllocBlk();                     /* 分配一个Block */
-    void FreeBlk(int i_no);             /* 释放一个Block */
+    void FreeBlk(int b_no);             /* 释放一个Block */
 };
 
 #endif
