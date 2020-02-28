@@ -13,7 +13,6 @@ public:
 	BufferManager();
 	~BufferManager();
 	
-	//待测
 	void SetDevMngr(DeviceManager *DevMngr);	/* 设置设备管理器 */
 	Buf *GetBuf(short dev, int blkno);  		/* 为ß指定盘块号的块申请一个高速缓存 */
 	void FreeBuf(Buf *buf);						/* 释放指定缓存控制块 */

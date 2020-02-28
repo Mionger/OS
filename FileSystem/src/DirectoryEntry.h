@@ -8,9 +8,6 @@ public:
 
     int m_ino;		        /* 目录项中Inode编号部分 */
 	char m_name[DIRSIZ];	/* 目录项中路径名部分 */
-
-	DirectoryEntry();
-	~DirectoryEntry();
 };
 
 #endif

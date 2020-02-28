@@ -6,7 +6,10 @@
 class MemINode
 {
 public:
-    unsigned int i_flag;	/* 状态的标志位，定义见enum INodeFlag */
+	MemINode();
+	~MemINode();
+
+	unsigned int i_flag;	/* 状态的标志位，定义见enum INodeFlag */
 	unsigned int i_mode;	/* 文件工作方式信息 */
 	
 	int		i_count;		/* 引用计数 */
@@ -22,6 +25,9 @@ public:
 	int		i_addr[10];		/* 用于文件逻辑块好和物理块好转换的基本索引表 */
 	
 	int		i_lastr;		/* 存放最近一次读取文件的逻辑块号，用于判断是否需要预读 */
+
+	void FromDiskINode(DiskINode d_inode);		/* 将DiskINode转化成MemINode */
+	DiskINode ToDiskINode();					/* 将MemINode转化成DiskINode */
 };
 
 #endif

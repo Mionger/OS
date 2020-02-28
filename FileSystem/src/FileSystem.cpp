@@ -123,7 +123,6 @@ void FileSystem::ResetGroupLinkBlkInfo()
         this->os_SuperBlock->s_free[i] = blk_cnt;
         blk_cnt++;
     }
-    this->os_SuperBlock->s_fmod = 1;
 
     /* 满的空闲块 */
     for (int i = 0; i < g_num - 1; i++)
@@ -153,6 +152,7 @@ void FileSystem::ResetGroupLinkBlkInfo()
     }
     os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).write((char *)&temp_blk, sizeof(temp_blk), BufferManager::BUFFER_SIZE * next_group_pos);
 
+    /* 设置SuperBlock被修改标记 */
     this->os_SuperBlock->s_fmod = 1;
 
     return;
@@ -247,7 +247,7 @@ int FileSystem::AllocDiskINode()
     return inode_no;
 }
 
-/* 释放一个DiskINode */
+/* 释放一个DiskINode,之前需要另行读取和保存inode的内容 */
 void FileSystem::FreeDiskINode(int i_no)
 {
     DiskINode d_inode;
@@ -280,6 +280,94 @@ void FileSystem::FreeDiskINode(int i_no)
     return;
 }
 
+/* 分配一个Block */
+Buf *FileSystem::AllocBlk()
+{
+    Buf *buf;
+    int b_no = this->os_SuperBlock->s_free[--this->os_SuperBlock->s_nfree];
+    if (0 == this->os_SuperBlock->s_nfree)
+    {
+        /* 读取下一组空闲块 */
+        buf = this->os_BufferManager->ReadBuf(b_no);
+
+        /* 赋值下一组空闲块 */
+        this->os_SuperBlock->s_nfree = ((int *)buf->b_addr)[0];
+        for (int i = 0; i < 100; i++)
+        {
+            this->os_SuperBlock->s_free[i] = ((int *)buf->b_addr)[i + 1];
+        }
+
+        this->os_BufferManager->FreeBuf(buf);
+    }
+
+    buf = this->os_BufferManager->GetBuf(DeviceManager::ROOTDEV, b_no);
+
+    /* 设置SuperBlock被修改标记 */
+    this->os_SuperBlock->s_fmod = 1;
+
+    return buf;
+}
+
+/* 释放一个Block,之前需要另行读取和保存DiskINode的内容 */
+void FileSystem::FreeBlk(int b_no)
+{
+    Buf *buf;
+    
+    /* 直接管理的数块已满 */
+    if (100 == this->os_SuperBlock->s_nfree)
+    {
+        buf = this->os_BufferManager->GetBuf(DeviceManager::ROOTDEV, b_no);
+
+        GroupLink temp_blk;
+        temp_blk.s_nfree = this->os_SuperBlock->s_nfree;
+        for (int i = 0; i < 100;i++)
+        {
+            temp_blk.s_free[i] = this->os_SuperBlock->s_free[i];
+        }
+        this->os_BufferManager->WriteBuf(buf);
+
+        this->os_SuperBlock->s_nfree = 0;
+    }
+
+    this->os_SuperBlock->s_free[this->os_SuperBlock->s_nfree++] = b_no;
+
+    /* 设置SuperBlock被修改标记 */
+    this->os_SuperBlock->s_fmod = 1;
+
+    return;
+}
+
+/* 格式化时创建根目录 */
+void FileSystem::CreateRootDir()
+{
+    /* 申请DiskINode以及文件块 */
+    int i_no = AllocDiskINode();
+    Buf *blk = AllocBlk();
+    int b_no = blk->b_blkno;
+    char *buf = blk->b_addr;
+
+    /* 修改DiskINode节点信息并保存 */
+    DiskINode d_inode;
+    this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).read((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * i_no);
+    d_inode.d_addr[0] = b_no;
+    d_inode.d_size = 2 * sizeof(DirectoryEntry);
+    d_inode.d_mode |= FILE_DIR;
+    this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).write((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * i_no);
+
+    /* 修改目录文件*/
+    DirectoryEntry dir[16];
+    memcpy(dir[0].m_name, ".", 2);
+    memcpy(dir[0].m_name, "..", 3);
+    /* 根目录的本级和上一级都是自身 */
+    dir[0].m_ino = i_no;
+    dir[1].m_ino = i_no;
+    /* 保存 */
+    memcpy(buf, (char *)dir, sizeof(dir));
+    this->os_BufferManager->WriteBuf(blk);
+    
+    return;
+}
+
 /* 格式化磁盘 */
 void FileSystem::FormatDisk()
 {
@@ -300,6 +388,9 @@ void FileSystem::FormatDisk()
 
     /* 保存整理的SuperBlock直接管理的DiskINode和磁盘盘块的信息 */
     SaveSupBlk();
+
+    /* 格式化时创建根目录 */
+    CreateRootDir();
 
     return;
 }

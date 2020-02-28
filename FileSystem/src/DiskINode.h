@@ -1,7 +1,8 @@
 #ifndef DISK_INODE_H
 #define DISK_INODE_H
 
-#define ALLOCED 0x8000
+#define ALLOCED  0x8000
+#define FILE_DIR 0x4000
 
 class DiskINode
 {

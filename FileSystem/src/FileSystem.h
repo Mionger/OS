@@ -4,6 +4,7 @@
 #include "SuperBlock.h"
 #include "BufferManager.h"
 #include "DiskINode.h"
+#include "DirectoryEntry.h"
 
 class FileSystem
 {
@@ -17,6 +18,8 @@ private:
 
     void ResetDiskINodeInfo();      /* 初始化SuperBlock直接管理的DiskINode */
     void ResetGroupLinkBlkInfo();   /* 使用成组链接法重置全部盘块信息 */
+
+    void CreateRootDir();           /* 格式化时创建根目录 */
 
 public:
     FileSystem(char *root_dev_name);
@@ -41,10 +44,10 @@ public:
     void FormatDisk();                  /* 格式化磁盘 */
 
     int AllocDiskINode();               /* 分配一个DiskINode */
-    void FreeDiskINode(int i_no);       /* 释放一个DiskINode */
+    void FreeDiskINode(int i_no);       /* 释放一个DiskINode,之前需要另行读取和保存DiskINode的内容 */
 
-    int AllocBlk();                     /* 分配一个Block */
-    void FreeBlk(int b_no);             /* 释放一个Block */
+    Buf *AllocBlk();                    /* 分配一个Block */
+    void FreeBlk(int b_no);             /* 释放一个Block,之前需要另行读取和保存DiskINode的内容 */
 };
 
 #endif
