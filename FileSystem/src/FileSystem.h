@@ -53,9 +53,8 @@ public:
     MemINode *ReadDiskINode(int i_no);      /* 找到相应编号的DiskINode，读到内存中 */
     void WriteDiskINode(MemINode *i_ptr);   /* 将MemINode写回到外存相应位置 */
 
-    MemINode *AllocMemINode();              /* 分配一个新的内存INode */
-    void FreeMemINode(MemINode *i_ptr);     /* 释放一个新的内存INode */
-    
+    // MemINode *AllocMemINode();              /* 分配一个新的内存INode */
+    void FreeMemINode(MemINode *i_ptr);     /* 释放一个新的内存INode */ 
 };
 
 #endif

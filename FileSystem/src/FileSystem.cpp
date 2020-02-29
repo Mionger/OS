@@ -58,7 +58,6 @@ void FileSystem::SupBlkInit()
     this->os_SuperBlock->s_nfree = 100;
     for (int i = 0; i < this->os_SuperBlock->s_nfree; i++)
     {
-        //TODO:设置具体盘块号？
         this->os_SuperBlock->s_free[i] = 0;
     }
 
@@ -66,7 +65,6 @@ void FileSystem::SupBlkInit()
     this->os_SuperBlock->s_ninode = 100;
     for (int i = 0; i < this->os_SuperBlock->s_ninode; i++)
     {
-        // TODO:设置具体inode号？
         this->os_SuperBlock->s_inode[i] = 0;
     }
 
@@ -399,7 +397,7 @@ void FileSystem::FormatDisk()
     return;
 }
 
-/* 找到相应编号的DiskINode，读到内存中 */
+/* 找到相应编号的DiskINode，读到内存中，相当于申请内存INode节点 */
 MemINode *FileSystem::ReadDiskINode(int i_no)
 {
     MemINode *m_inode;
@@ -441,3 +439,20 @@ void FileSystem::WriteDiskINode(MemINode *i_ptr)
     return;
 }
 
+/* 释放一个新的内存INode */
+void FileSystem::FreeMemINode(MemINode *i_ptr)
+{
+    if (1 == i_ptr->i_count)
+    {
+        if (i_ptr->i_mode & UPDATE)
+        {
+            WriteDiskINode(i_ptr);
+        }
+        i_ptr->i_mode = 0;
+        i_ptr->i_number = -1;
+    }
+
+    i_ptr->i_count--;
+
+    return;
+}
