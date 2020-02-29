@@ -8,6 +8,8 @@ FileSystem::FileSystem(char *root_dev_name)
     this->os_DeviceManager = new DeviceManager(root_dev_name);
     /* 申请缓存管理 */
     this->os_BufferManager = new BufferManager;
+    /* 申请内存INode控制表 */
+    this->os_INodeTable = new INodeTable;
 
     /* 把设备管理模块挂载到缓存管理模块 */
     os_BufferManager->SetDevMngr(this->os_DeviceManager);
@@ -17,7 +19,8 @@ FileSystem::~FileSystem()
 {
     delete this->os_SuperBlock;
     delete this->os_DeviceManager;
-    delete this->os_BufferManager;   
+    delete this->os_BufferManager;
+    delete this->os_INodeTable;
 }
 
 /* 读取磁盘中的SuperBlock */
@@ -230,6 +233,7 @@ int FileSystem::AllocDiskINode()
     /* DiskINode用尽 */
     if(0 == this->os_SuperBlock->s_ninode)
     {
+        //TODO:
         cout << "ERROR CODE 002" << endl;
     }
 
@@ -392,6 +396,48 @@ void FileSystem::FormatDisk()
     /* 格式化时创建根目录 */
     CreateRootDir();
 
+    return;
+}
+
+/* 找到相应编号的DiskINode，读到内存中 */
+MemINode *FileSystem::ReadDiskINode(int i_no)
+{
+    MemINode *m_inode;
+    /* 从磁盘读取对应的DiskINode */
+    DiskINode d_inode;
+    this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).read((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * i_no);
+
+    /* DiskINode未被分配 */
+    if(!(d_inode.d_mode & ALLOCED))
+    {
+        //TODO:
+        cout << "ERROR CODE 003" << endl;
+        return NULL;
+    }
+
+    /* 未加载到内存中 */
+    if (-1 == this->os_INodeTable->IsLoaded(DeviceManager::ROOTDEV, i_no))
+    {
+        m_inode = this->os_INodeTable->GetMemINode();
+        m_inode->FromDiskINode(d_inode);
+        m_inode->i_number = i_no;
+        return m_inode;
+    }
+    /* 已经加载到内存中 */
+    else
+    {
+        m_inode = this->os_INodeTable->GetLoadedINode(i_no);
+        return m_inode;
+    }
+}
+
+/* 将MemINode写回到外存相应位置 */
+void FileSystem::WriteDiskINode(MemINode *i_ptr)
+{
+    i_ptr->i_mode &= ~UPDATE;
+    int i_no = i_ptr->i_number;
+    DiskINode d_inode = i_ptr->ToDiskINode();
+    this->os_DeviceManager->GetBlockDevice(DeviceManager::ROOTDEV).write((char *)&d_inode, FileSystem::INODE_SIZE, FileSystem::INODE_START_SECTOR * BufferManager::BUFFER_SIZE + FileSystem::INODE_SIZE * i_no);
     return;
 }
 

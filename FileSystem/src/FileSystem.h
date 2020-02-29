@@ -3,7 +3,7 @@
 
 #include "SuperBlock.h"
 #include "BufferManager.h"
-#include "DiskINode.h"
+#include "INodeTable.h"
 #include "DirectoryEntry.h"
 
 class FileSystem
@@ -40,14 +40,22 @@ public:
     SuperBlock *os_SuperBlock;          /* SuperBlock */
     DeviceManager *os_DeviceManager;    /* 设备控制 */
     BufferManager *os_BufferManager;    /* 缓存控制 */
+    INodeTable *os_INodeTable;          /* 内存INode控制表 */
 
-    void FormatDisk();                  /* 格式化磁盘 */
+    void FormatDisk();                      /* 格式化磁盘 */
 
-    int AllocDiskINode();               /* 分配一个DiskINode */
-    void FreeDiskINode(int i_no);       /* 释放一个DiskINode,之前需要另行读取和保存DiskINode的内容 */
+    int AllocDiskINode();                   /* 分配一个DiskINode */
+    void FreeDiskINode(int i_no);           /* 释放一个DiskINode,之前需要另行读取和保存DiskINode的内容 */
 
-    Buf *AllocBlk();                    /* 分配一个Block */
-    void FreeBlk(int b_no);             /* 释放一个Block,之前需要另行读取和保存DiskINode的内容 */
+    Buf *AllocBlk();                        /* 分配一个Block */
+    void FreeBlk(int b_no);                 /* 释放一个Block,之前需要另行读取和保存DiskINode的内容 */
+
+    MemINode *ReadDiskINode(int i_no);      /* 找到相应编号的DiskINode，读到内存中 */
+    void WriteDiskINode(MemINode *i_ptr);   /* 将MemINode写回到外存相应位置 */
+
+    MemINode *AllocMemINode();              /* 分配一个新的内存INode */
+    void FreeMemINode(MemINode *i_ptr);     /* 释放一个新的内存INode */
+    
 };
 
 #endif
