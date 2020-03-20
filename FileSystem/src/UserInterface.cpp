@@ -38,7 +38,7 @@ void UserInterface::format()
 
     /* 格式化磁盘信息 */
     this->u_SuperBlockManager->FormatDisk();
-    cur_dir = "/";
+    this->cur_dir = "/";
     this->cd_FileManager = new FileManager;
     this->open_FileManager = NULL;
 
@@ -90,7 +90,7 @@ int UserInterface::touch(string f_name)
         return -1;
     }
 
-    this->cd_FileManager->CreateFile(f_name);
+    this->cd_FileManager->CreateFile(f_name, false);
     return 0;
 }
 
@@ -188,10 +188,14 @@ int UserInterface::fsize()
 /* 删除文件 */
 int UserInterface::fdelete(string f_name)
 {
-    if (NULL == this->open_FileManager)
+    if(!this->cd_FileManager->HasItem(f_name))
     {
         return -1;
     }
+    // if (NULL == this->open_FileManager)
+    // {
+    //     return -1;
+    // }
 
     int d_no = this->cd_FileManager->GetDiskINodeNo(f_name);
     FileManager *fm = new FileManager(d_no);
@@ -209,10 +213,14 @@ int UserInterface::fdelete(string f_name)
 /* 删除目录 */
 int UserInterface::dirdelete(string f_name)
 {
-    if (NULL == this->open_FileManager)
+    if(!this->cd_FileManager->HasItem(f_name))
     {
         return -1;
     }
+    // if (NULL == this->open_FileManager)
+    // {
+    //     return -1;
+    // }
 
     int d_no = this->cd_FileManager->GetDiskINodeNo(f_name);
     FileManager *fm = new FileManager(d_no);
@@ -644,7 +652,7 @@ void UserInterface::ProcessCmd(string cmd)
     {
         if (1 == para_count)
         {
-            int result = fdelete(cmds[1]);
+            int result = dirdelete(cmds[1]);
             if (-1 == result)
             {
                 cout << "该文件夹不存在" << endl;

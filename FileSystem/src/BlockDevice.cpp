@@ -7,7 +7,7 @@ BlockDevice::BlockDevice()
     this->fp = fopen(this->d_name, "rb+");
     if(IfExist())
     {
-        cout << "挂载磁盘"<<d_name<<"成功！" << endl;
+        cout << "挂载磁盘"<<d_name<<"成功" << endl;
     }
 }
 

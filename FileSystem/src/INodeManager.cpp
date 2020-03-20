@@ -24,7 +24,7 @@ INodeManager::~INodeManager()
 }
 
 /* 分配新内存inode */
-MemINode *INodeManager::AllocMemINode()
+MemINode *INodeManager::AllocMemINode(int i_no)
 {
     for (int i = 0; i < INodeManager::MEM_INODE_MAX; i++)
     {
@@ -32,6 +32,25 @@ MemINode *INodeManager::AllocMemINode()
         {
             this->m_inode[i].i_mode |= MemINode::IALLOC;
             this->m_inode[i].i_mode |= MemINode::IUPD;
+            this->m_inode[i].i_number = i_no;
+            return &this->m_inode[i];
+        }
+    }
+
+    cout << "ERROR CODE 004" << endl;
+    return NULL;
+}
+
+MemINode *INodeManager::AllocMemINode()
+{
+    int i_no = this->i_SuperBlockManager->AllocDiskINode();
+    for (int i = 0; i < INodeManager::MEM_INODE_MAX; i++)
+    {
+        if (!(this->m_inode[i].i_mode & MemINode::IALLOC))
+        {
+            this->m_inode[i].i_mode |= MemINode::IALLOC;
+            this->m_inode[i].i_mode |= MemINode::IUPD;
+            this->m_inode[i].i_number = i_no;
             return &this->m_inode[i];
         }
     }
@@ -56,6 +75,7 @@ void INodeManager::FreeMemINode(MemINode *m_inode)
             WriteDiskINode(m_inode);
         }
         m_inode->i_mode &= ~(MemINode::IALLOC);
+        m_inode->i_mode = 0;
         m_inode->i_number = 0;
         m_inode->i_count = 0;
     }
@@ -63,7 +83,7 @@ void INodeManager::FreeMemINode(MemINode *m_inode)
     return;
 }
 
-/* 判断外存inode1是否在内存 */
+/* 判断外存inode是否在内存 */
 bool INodeManager::InMem(int d_no)
 {
     for (int i = 0; i < INodeManager::MEM_INODE_MAX; i++)
@@ -116,8 +136,7 @@ MemINode *INodeManager::ReadDiskINode(int d_no)
     this->i_BlockDevice->Bread((char *)&d_inode, sizeof(d_inode), sizeof(SuperBlock) + d_no * sizeof(DiskINode));
     
     /* 申请内存inode */
-    m_inode = AllocMemINode();
-    m_inode->i_number = d_no;
+    m_inode = AllocMemINode(d_no);
     m_inode->i_count = 1;
     m_inode->FromDiskINode(d_inode);
 

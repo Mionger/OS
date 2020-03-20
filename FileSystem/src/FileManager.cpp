@@ -179,10 +179,12 @@ int FileManager::CreateFile(string f_name, bool is_dir)
         f.f_offset = 0;
         f.Write((char *)dir, sizeof(dir));
     }
+    int i_no = new_inode->i_number;
     this->f_INodeManager->FreeMemINode(new_inode);
+    
 
     DirectoryEntry new_item;
-    new_item.i_no = new_inode->i_number;
+    new_item.i_no = i_no;
     for (int i = 0; i <= f_name.size(); i++)
     {
         if(f_name.size()==i)
@@ -197,7 +199,7 @@ int FileManager::CreateFile(string f_name, bool is_dir)
 
     this->f_file->f_offset = GetFileSize();
     this->Write((char *)&new_item, sizeof(DirectoryEntry));
-    return new_inode->i_number;
+    return i_no;
 }
 
 /* 根据文件名删除目录项 */

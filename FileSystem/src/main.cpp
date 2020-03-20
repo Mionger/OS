@@ -12,15 +12,14 @@ SuperBlockManager       os_SuperBlockManager;
 INodeManager            os_INodeManager;
 UserInterface           ui;
 
-//TODO:进入..和.出现段错误
+//TODO:删除文件夹失败
+//dirdelete
+
 
 int main()
 {
 
     ui.format();
-
-    // ui.mkdir("home");
-    // cout << "创建路径home成功" << endl;
 
     ui.GetCmd("root");
     return 0;

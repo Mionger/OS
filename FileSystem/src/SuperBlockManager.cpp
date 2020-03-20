@@ -100,7 +100,7 @@ void SuperBlockManager::ResetFreeBlkInfo()
 /* 创建根目录 */
 void SuperBlockManager::CreateRootDir()
 {
-    /* 申请盘块 */
+    /* 申请盘块，用于存储DirectoryEntry */
     Buf *blk = AllocBlk();
     int b_no = blk->b_blkno;
     char *buf = blk->b_addr;
@@ -120,7 +120,7 @@ void SuperBlockManager::CreateRootDir()
     dir[0].i_no = i_no;
     memcpy(dir[0].f_name, ".", 2);
     /* 上级路径 */
-    dir[0].i_no = i_no;
+    dir[1].i_no = i_no;
     memcpy(dir[1].f_name, "..", 3);
 
     /* 写入磁盘 */
