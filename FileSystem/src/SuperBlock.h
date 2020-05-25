@@ -18,14 +18,10 @@ public:
 
     int     s_isize;                        /* 外存inode数 */
     int     s_fsize;                        /* 盘块总数 */
-
     char    s_ibitmap[DISK_INODE_BLOCK];    /* SuperBlock通过位图管理外存inode */
-
     int     s_nfree;                        /* 直接管理的空闲盘块数量 */
     int     s_free[100];                    /* 直接管理的空闲盘块索引表 */
-
     int	    s_dirty;			            /* SuperBlock脏标记 */
-
     char    s_padding[480];                 /* 填充至1024字节（两个盘块大小） */
 };
 

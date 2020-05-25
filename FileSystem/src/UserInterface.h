@@ -32,7 +32,7 @@ public:
     int mkdir(string f_name);           /* 创建文件夹 */
     int touch(string f_name);           /* 创建文件 */
     int fopen(string f_name);           /* 打开文件 */
-    void fclose(string f_name);         /* 关闭文件 */
+    void fclose();                      /* 关闭文件 */
     int fread(char* buf, int length);   /* 读取文件 */
     int fwrite(char *buf, int length);  /* 写入文件 */
     void fseek(int offset);             /* 更改文件指针 */

@@ -22,10 +22,11 @@ public:
     INodeManager();
     ~INodeManager();
 
+    void formatMemINode();                  /* 格式化内存inode */
     MemINode *AllocMemINode();              /* 分配新内存inode */
     MemINode *AllocMemINode(int i_no);      /* 分配新内存inode */
     void FreeMemINode(MemINode *m_inode);   /* 释放内存inode */
-    bool InMem(int d_no);                   /* 判断外存inode1是否在内存 */
+    bool InMem(int d_no);                   /* 判断外存inode是否在内存 */
     MemINode *GetLoadedINode(int d_no);     /* 获取已经读取到内存的外存inode */
     MemINode *ReadDiskINode(int d_no);      /* 根据外存inode编号读取到内存 */
     void WriteDiskINode(MemINode *m_inode); /* 将内存inode写回到外存 */

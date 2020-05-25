@@ -30,17 +30,18 @@ void UserInterface::format()
     if (NULL != this->cd_FileManager)
     {
         delete this->cd_FileManager;
+        this->cd_FileManager = NULL;
     }
     if (NULL != this->open_FileManager)
     {
         delete this->open_FileManager;
+        this->open_FileManager = NULL;
     }
 
     /* 格式化磁盘信息 */
     this->u_SuperBlockManager->FormatDisk();
     this->cur_dir = "/";
     this->cd_FileManager = new FileManager;
-    this->open_FileManager = NULL;
 
     return;
 }
@@ -104,7 +105,7 @@ int UserInterface::fopen(string f_name)
     
     if (!this->cd_FileManager->HasItem(f_name))
     {
-        cout << "该文件不存在" << endl;
+        // cout << "该文件不存在" << endl;
         return - 1;
     }
 
@@ -121,7 +122,7 @@ int UserInterface::fopen(string f_name)
 }
 
 /* 关闭文件 */
-void UserInterface::fclose(string f_name)
+void UserInterface::fclose()
 {
     if (NULL != this->open_FileManager)
     {
@@ -314,8 +315,8 @@ int UserInterface::cd(string f_name)
             return -1;
         }
 
-        FileManager *fm = new FileManager;
-        if(!fm->IsFolder())
+        FileManager *fm = new FileManager(d_no);
+        if (!fm->IsFolder())
         {
             delete fm;
             // cout << "不是文件夹" << endl;
@@ -511,7 +512,7 @@ void UserInterface::ProcessCmd(string cmd)
         }
         return;
     }
-    else if ("touch" == type)
+    else if ("fcreat" == type)
     {
         if (1 == para_count)
         {
@@ -519,7 +520,7 @@ void UserInterface::ProcessCmd(string cmd)
         }
         else
         {
-            cout << "touch命令只接受1个参数" << endl;
+            cout << "fcreat命令只接受1个参数" << endl;
         }
     }
     else if ("fopen" == type)
@@ -545,7 +546,7 @@ void UserInterface::ProcessCmd(string cmd)
     {
         if (0 == para_count)
         {
-            fclose(cmds[1]);
+            fclose();
         }
         else
         {

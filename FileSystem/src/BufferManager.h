@@ -4,7 +4,7 @@
 #include "Buf.h"
 #include "BlockDevice.h"
 
-#define BUFFER_NUM  100
+#define BUFFER_NUM  600
 #define BUFFER_SIZE 512
 
 class BufferManager

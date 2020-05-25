@@ -23,6 +23,15 @@ INodeManager::~INodeManager()
     }
 }
 
+/* 格式化内存inode */
+void INodeManager::formatMemINode()
+{
+    for (int i = 0; i < INodeManager::MEM_INODE_MAX;i++)
+    {
+        this->m_inode[i].i_number = -1;
+    }
+}                 
+
 /* 分配新内存inode */
 MemINode *INodeManager::AllocMemINode(int i_no)
 {

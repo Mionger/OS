@@ -11,6 +11,7 @@ FileManager::FileManager()
     this->f_SuperBlockManager = &os_SuperBlockManager;
     this->f_BufferManager = &os_BufferManager;
     this->f_INodeManager = &os_INodeManager;
+    this->f_INodeManager->formatMemINode();
     int i_no = ROOT_I_NO;
     this->f_file = OpenFile(i_no);
 }
@@ -154,11 +155,13 @@ int FileManager::CreateFile(string f_name, bool is_dir)
     if (f_name.size() > 27)
     {
         cout << "文件名过长" << endl;
+        return -1;
     }
 
     if (HasItem(f_name))
     {
         cout << "文件名已存在" << endl;
+        return -1;
     }
 
     MemINode *new_inode = this->f_INodeManager->AllocMemINode();

@@ -1,4 +1,5 @@
 #include "tool.h"
+#include <fstream>
 
 vector<string> split(const string &s, const string &seperator)
 {
@@ -44,3 +45,5 @@ vector<string> split(const string &s, const string &seperator)
     }
     return result;
 }
+
+
